@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MyWiki</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=DM+Mono:wght@400;500&family=Outfit:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #f7f5f0; --surface: #ffffff; --surface2: #f0ede6; --border: #e2ddd5;
+  --accent: #2d5a3d; --accent-soft: rgba(45,90,61,0.08);
+  --text: #2c2a26; --text-muted: #8a8378; --text-light: #b5b0a8;
+  --danger: #c0392b;
+  --shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 16px rgba(0,0,0,0.05);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.12);
+}
+html.dark {
+  --bg: #111210; --surface: #1a1c19; --surface2: #222520; --border: #2e3229;
+  --accent: #5aab72; --accent-soft: rgba(90,171,114,0.1);
+  --text: #e2e5de; --text-muted: #7a8075; --text-light: #4a4f45;
+  --danger: #e05c4b;
+  --shadow: 0 1px 3px rgba(0,0,0,0.3), 0 4px 16px rgba(0,0,0,0.2);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.4);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; transition: background-color 0.22s ease, border-color 0.22s ease, color 0.22s ease; }
+body { background: var(--bg); color: var(--text); font-family: 'Outfit', sans-serif; font-size: 14px; line-height: 1.7; min-height: 100vh; }
+body::after { content:''; position:fixed; inset:0; background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E"); pointer-events:none; z-index:9999; opacity:0.6; }
+
+nav { background:var(--surface); border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; padding:0 32px; height:58px; position:sticky; top:0; z-index:100; }
+.nav-brand { font-family:'Instrument Serif',serif; font-size:22px; color:var(--text); cursor:pointer; display:flex; align-items:center; gap:10px; }
+.nav-brand .dot { width:8px; height:8px; border-radius:50%; background:var(--accent); display:inline-block; }
+.nav-right { display:flex; align-items:center; gap:12px; }
+.btn-new { background:var(--accent); color:#fff; border:none; border-radius:8px; padding:8px 18px; font-family:'Outfit',sans-serif; font-size:13px; font-weight:500; cursor:pointer; display:flex; align-items:center; gap:7px; box-shadow:0 2px 8px rgba(45,90,61,0.25); }
+.btn-new:hover { filter:brightness(0.88); transform:translateY(-1px); }
+.btn-theme { background:var(--surface2); border:1px solid var(--border); border-radius:8px; width:36px; height:36px; display:flex; align-items:center; justify-content:center; font-size:16px; cursor:pointer; }
+.btn-theme:hover { border-color:var(--accent); }
+.search-input { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:7px 14px; font-family:'Outfit',sans-serif; font-size:13px; color:var(--text); width:220px; outline:none; }
+.search-input:focus { border-color:var(--accent); background:var(--surface); }
+.search-input::placeholder { color:var(--text-light); }
+
+.layout { display:grid; grid-template-columns:230px 1fr; max-width:1180px; margin:0 auto; padding:0 24px; min-height:calc(100vh - 58px); }
+aside { padding:28px 20px 28px 0; border-right:1px solid var(--border); }
+.sidebar-title { font-size:10px; font-weight:600; letter-spacing:0.12em; text-transform:uppercase; color:var(--text-light); margin-bottom:10px; margin-top:24px; }
+.sidebar-title:first-child { margin-top:0; }
+.stats-row { display:flex; gap:10px; margin-bottom:4px; }
+.stat-pill { flex:1; background:var(--surface); border:1px solid var(--border); border-radius:10px; padding:10px 8px; text-align:center; box-shadow:var(--shadow); }
+.stat-num { display:block; font-family:'DM Mono',monospace; font-size:20px; font-weight:500; color:var(--accent); }
+.stat-label { display:block; font-size:10px; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.06em; }
+.tag-list { display:flex; flex-wrap:wrap; gap:5px; }
+.sidebar-tag { font-size:11px; font-family:'DM Mono',monospace; background:var(--surface); border:1px solid var(--border); color:var(--text-muted); padding:3px 10px; border-radius:20px; cursor:pointer; }
+.sidebar-tag:hover,.sidebar-tag.active { border-color:var(--accent); color:var(--accent); background:var(--accent-soft); }
+.recent-list { list-style:none; }
+.recent-list li { padding:7px 10px; border-radius:8px; cursor:pointer; font-size:13px; color:var(--text-muted); display:flex; align-items:center; gap:8px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+.recent-list li::before { content:'↗'; font-size:11px; flex-shrink:0; color:var(--text-light); }
+.recent-list li:hover { background:var(--surface2); color:var(--text); }
+
+main { padding:28px 0 28px 32px; }
+.home-header { margin-bottom:26px; display:flex; align-items:center; justify-content:space-between; }
+.home-header h1 { font-family:'Instrument Serif',serif; font-size:28px; font-weight:400; }
+.count-badge { font-family:'DM Mono',monospace; font-size:12px; color:var(--text-muted); background:var(--surface2); border:1px solid var(--border); padding:4px 12px; border-radius:20px; }
+.cards-grid { display:grid; gap:14px; }
+.note-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:20px 22px; cursor:pointer; box-shadow:var(--shadow); animation:cardIn 0.35s ease both; }
+@keyframes cardIn { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+.note-card:hover { border-color:var(--accent); transform:translateY(-2px); box-shadow:0 4px 20px rgba(45,90,61,0.1); }
+.card-meta { display:flex; align-items:center; gap:10px; margin-bottom:8px; flex-wrap:wrap; }
+.card-date { font-family:'DM Mono',monospace; font-size:11px; color:var(--text-light); }
+.card-tags { display:flex; gap:5px; flex-wrap:wrap; }
+.card-tag { font-size:11px; font-family:'DM Mono',monospace; background:var(--accent-soft); color:var(--accent); padding:2px 9px; border-radius:20px; border:1px solid rgba(45,90,61,0.15); }
+.card-title { font-family:'Instrument Serif',serif; font-size:19px; color:var(--text); margin-bottom:7px; font-weight:400; line-height:1.35; }
+.card-excerpt { font-size:13px; color:var(--text-muted); display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden; line-height:1.6; }
+.card-footer { margin-top:14px; display:flex; align-items:center; justify-content:space-between; }
+.card-words { font-size:11px; color:var(--text-light); font-family:'DM Mono',monospace; }
+.card-delete { background:none; border:1px solid transparent; color:var(--text-light); border-radius:6px; padding:4px 8px; font-size:11px; cursor:pointer; font-family:'Outfit',sans-serif; }
+.card-delete:hover { background:#fef2f2; border-color:#fca5a5; color:var(--danger); }
+.empty-state { text-align:center; padding:80px 20px; color:var(--text-muted); }
+.empty-state .big-icon { font-size:52px; margin-bottom:16px; display:block; }
+.empty-state h2 { font-family:'Instrument Serif',serif; font-size:22px; font-weight:400; margin-bottom:8px; color:var(--text); }
+.empty-state p { font-size:14px; }
+
+#view-page { display:none; }
+.page-back { display:inline-flex; align-items:center; gap:6px; color:var(--text-muted); font-size:13px; cursor:pointer; padding:6px 10px; border-radius:8px; border:1px solid transparent; background:none; font-family:'Outfit',sans-serif; margin-bottom:24px; }
+.page-back:hover { background:var(--surface); border-color:var(--border); color:var(--text); }
+.page-title-display { font-family:'Instrument Serif',serif; font-size:36px; font-weight:400; line-height:1.2; margin-bottom:12px; }
+.page-meta-row { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:6px; }
+.page-date-display { font-family:'DM Mono',monospace; font-size:12px; color:var(--text-light); }
+.page-tags-display { display:flex; gap:6px; flex-wrap:wrap; }
+.page-tag-display { font-size:12px; font-family:'DM Mono',monospace; background:var(--accent-soft); color:var(--accent); padding:3px 11px; border-radius:20px; border:1px solid rgba(45,90,61,0.15); }
+.page-divider { border:none; border-top:1px solid var(--border); margin:20px 0 28px; }
+.page-body { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:32px 36px; box-shadow:var(--shadow); font-size:15px; line-height:1.8; white-space:pre-wrap; min-height:200px; }
+.page-actions { margin-top:20px; display:flex; gap:10px; }
+.btn-edit { background:var(--surface2); color:var(--text); border:1px solid var(--border); border-radius:8px; padding:8px 18px; font-family:'Outfit',sans-serif; font-size:13px; cursor:pointer; }
+.btn-edit:hover { border-color:var(--accent); color:var(--accent); }
+.btn-delete-page { background:none; color:var(--text-muted); border:1px solid var(--border); border-radius:8px; padding:8px 18px; font-family:'Outfit',sans-serif; font-size:13px; cursor:pointer; }
+.btn-delete-page:hover { background:#fef2f2; border-color:#fca5a5; color:var(--danger); }
+
+.modal-overlay { position:fixed; inset:0; background:rgba(30,28,24,0.5); backdrop-filter:blur(4px); z-index:1000; display:none; align-items:center; justify-content:center; padding:20px; }
+.modal-overlay.open { display:flex; }
+.modal { background:var(--surface); border-radius:18px; padding:32px; width:100%; max-width:600px; box-shadow:var(--shadow-lg); animation:modalIn 0.25s cubic-bezier(0.34,1.56,0.64,1); }
+@keyframes modalIn { from{opacity:0;transform:scale(0.94) translateY(10px)} to{opacity:1;transform:scale(1) translateY(0)} }
+.modal-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; }
+.modal-title { font-family:'Instrument Serif',serif; font-size:22px; font-weight:400; }
+.modal-close { background:none; border:1px solid var(--border); border-radius:8px; width:32px; height:32px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--text-muted); font-size:16px; }
+.modal-close:hover { background:var(--surface2); }
+.form-group { margin-bottom:18px; }
+.form-label { display:block; font-size:12px; font-weight:500; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.08em; margin-bottom:7px; }
+.form-input,.form-textarea { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:10px 14px; font-family:'Outfit',sans-serif; font-size:14px; color:var(--text); outline:none; }
+.form-input:focus,.form-textarea:focus { border-color:var(--accent); background:var(--surface); box-shadow:0 0 0 3px rgba(45,90,61,0.08); }
+.form-input::placeholder,.form-textarea::placeholder { color:var(--text-light); }
+.form-textarea { min-height:180px; resize:vertical; line-height:1.7; }
+.form-hint { font-size:11px; color:var(--text-light); margin-top:5px; }
+.modal-footer { display:flex; gap:10px; justify-content:flex-end; margin-top:8px; padding-top:20px; border-top:1px solid var(--border); }
+.btn-cancel { background:none; border:1px solid var(--border); border-radius:8px; padding:9px 20px; font-family:'Outfit',sans-serif; font-size:13px; color:var(--text-muted); cursor:pointer; }
+.btn-cancel:hover { background:var(--surface2); }
+.btn-save { background:var(--accent); color:#fff; border:none; border-radius:8px; padding:9px 24px; font-family:'Outfit',sans-serif; font-size:13px; font-weight:500; cursor:pointer; box-shadow:0 2px 8px rgba(45,90,61,0.25); }
+.btn-save:hover { filter:brightness(0.88); }
+.btn-save:disabled { opacity:0.4; cursor:not-allowed; }
+
+.confirm-overlay { position:fixed; inset:0; background:rgba(30,28,24,0.4); backdrop-filter:blur(4px); z-index:1500; display:none; align-items:center; justify-content:center; }
+.confirm-overlay.open { display:flex; }
+.confirm-box { background:var(--surface); border-radius:14px; padding:28px; max-width:360px; width:90%; box-shadow:var(--shadow-lg); text-align:center; animation:modalIn 0.2s ease; }
+.confirm-box h3 { font-family:'Instrument Serif',serif; font-size:20px; font-weight:400; margin-bottom:8px; }
+.confirm-box p { font-size:13px; color:var(--text-muted); margin-bottom:24px; }
+.confirm-btns { display:flex; gap:10px; justify-content:center; }
+.btn-confirm-no { background:var(--surface2); border:1px solid var(--border); border-radius:8px; padding:8px 20px; font-family:'Outfit',sans-serif; font-size:13px; cursor:pointer; }
+.btn-confirm-yes { background:var(--danger); color:#fff; border:none; border-radius:8px; padding:8px 20px; font-family:'Outfit',sans-serif; font-size:13px; cursor:pointer; }
+
+.toast { position:fixed; bottom:28px; right:28px; background:var(--text); color:var(--bg); border-radius:10px; padding:12px 20px; font-size:13px; font-weight:500; box-shadow:var(--shadow-lg); z-index:2000; transform:translateY(20px); opacity:0; transition:all 0.3s cubic-bezier(0.34,1.56,0.64,1); pointer-events:none; }
+.toast.show { transform:translateY(0); opacity:1; }
+.toast.green { background:var(--accent); color:#fff; }
+
+@media (max-width:720px) {
+  .layout { grid-template-columns:1fr; }
+  aside { border-right:none; border-bottom:1px solid var(--border); padding:16px 0; }
+  main { padding:20px 0; }
+  nav { padding:0 16px; }
+  .search-input { width:130px; }
+  .page-body { padding:20px; }
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <span class="nav-brand" id="nav-brand"><span class="dot"></span>MyWiki</span>
+  <div class="nav-right">
+    <span id="sync-status" style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text-light);">● Connecting…</span>
+    <input class="search-input" type="text" id="searchInput" placeholder="Search notes…">
+    <button class="btn-theme" id="btn-theme" title="Toggle dark mode">🌙</button>
+    <button class="btn-new" id="btn-new">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M7 1v12M1 7h12" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+      New Page
+    </button>
+  </div>
+</nav>
+
+<div class="layout">
+  <aside>
+    <div class="sidebar-title">Overview</div>
+    <div class="stats-row">
+      <div class="stat-pill"><span class="stat-num" id="stat-pages">0</span><span class="stat-label">Pages</span></div>
+      <div class="stat-pill"><span class="stat-num" id="stat-tags">0</span><span class="stat-label">Tags</span></div>
+    </div>
+    <div class="sidebar-title" style="margin-top:22px">Tags</div>
+    <div class="tag-list" id="sidebar-tags"><span style="color:var(--text-light);font-size:12px;">No tags yet</span></div>
+    <div class="sidebar-title" style="margin-top:22px">Recent</div>
+    <ul class="recent-list" id="sidebar-recent"><li style="cursor:default;color:var(--text-light)">No pages yet</li></ul>
+  </aside>
+
+  <main>
+    <div id="view-home">
+      <div class="home-header">
+        <h1>All Notes</h1>
+        <span class="count-badge" id="notes-count">0 pages</span>
+      </div>
+      <div class="cards-grid" id="cards-container">
+        <div class="empty-state"><span class="big-icon">⏳</span><h2>Loading…</h2><p>Connecting to your wiki.</p></div>
+      </div>
+    </div>
+
+    <div id="view-page">
+      <button class="page-back" id="btn-back">← Back to all notes</button>
+      <div class="page-title-display" id="page-title-display"></div>
+      <div class="page-meta-row">
+        <span class="page-date-display" id="page-date-display"></span>
+        <div class="page-tags-display" id="page-tags-display"></div>
+      </div>
+      <hr class="page-divider">
+      <div class="page-body" id="page-body-display"></div>
+      <div class="page-actions">
+        <button class="btn-edit" id="btn-edit-page">✏️ Edit</button>
+        <button class="btn-delete-page" id="btn-delete-page">🗑 Delete</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<div class="modal-overlay" id="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title-text">New Page</span>
+      <button class="modal-close" id="modal-close">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Title *</label>
+      <input class="form-input" type="text" id="field-title" placeholder="Give your note a title…">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Content</label>
+      <textarea class="form-textarea" id="field-content" placeholder="Write your note here…"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tags</label>
+      <input class="form-input" type="text" id="field-tags" placeholder="personal, ideas, work…">
+      <div class="form-hint">Separate tags with commas</div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" id="btn-cancel">Cancel</button>
+      <button class="btn-save" id="btn-save" disabled>Save Page</button>
+    </div>
+  </div>
+</div>
+
+<div class="confirm-overlay" id="confirm-overlay">
+  <div class="confirm-box">
+    <h3>Delete this page?</h3>
+    <p>This action cannot be undone.</p>
+    <div class="confirm-btns">
+      <button class="btn-confirm-no" id="btn-confirm-no">Cancel</button>
+      <button class="btn-confirm-yes" id="btn-confirm-yes">Delete</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { initializeApp }                          from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+import { getDatabase, ref, set, remove, onValue } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+// ── Firebase setup ────────────────────────────────────────────────
+const app = initializeApp({
+  apiKey: "AIzaSyB4ZO-MOwDK7Py3WcQn66BiO5rjoyV_qcY",
+  authDomain: "mywikipage-fdc73.firebaseapp.com",
+  databaseURL: "https://mywikipage-fdc73-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "mywikipage-fdc73",
+  storageBucket: "mywikipage-fdc73.firebasestorage.app",
+  messagingSenderId: "924236175329",
+  appId: "1:924236175329:web:c2429ea7716bbc7295e4a0"
+});
+const db = getDatabase(app);
+const fbSave   = p  => set(ref(db, `pages/${p.id}`), p);
+const fbDelete = id => remove(ref(db, `pages/${id}`));
+
+// ── State ─────────────────────────────────────────────────────────
+let pages = [], currentPageId = null, editingId = null, activeTag = null, pendingDelete = null;
+
+// ── DOM shortcut ──────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+
+// ── Sync indicator ────────────────────────────────────────────────
+function syncStatus(s) {
+  const el = $('sync-status');
+  const map = { synced:['● Synced','var(--accent)'], saving:['↑ Saving…','var(--text-muted)'], error:['✕ Error','var(--danger)'] };
+  if (map[s]) { el.textContent = map[s][0]; el.style.color = map[s][1]; }
+}
+
+// ── Live Firebase listener ────────────────────────────────────────
+onValue(ref(db, 'pages'), snap => {
+  pages = snap.val() ? Object.values(snap.val()) : [];
+  syncStatus('synced');
+  renderSidebar();
+  if (currentPageId) {
+    pages.find(p => p.id === currentPageId) ? openPage(currentPageId) : showHome();
+  } else {
+    renderHome($('searchInput').value);
+  }
+});
+
+// ── Utilities ─────────────────────────────────────────────────────
+const genId    = ()  => Date.now().toString(36) + Math.random().toString(36).slice(2,6);
+const esc      = s   => String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+const fmtDate  = t   => new Date(t).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+const wc       = t   => t.trim() ? t.trim().split(/\s+/).length : 0;
+const parseTags= s   => s.split(',').map(t=>t.trim().toLowerCase()).filter(Boolean);
+
+function toast(msg, type='') {
+  const el = $('toast');
+  el.textContent = msg;
+  el.className = 'toast show' + (type ? ' '+type : '');
+  setTimeout(() => el.className = 'toast', 2600);
+}
+
+// ── Sidebar ───────────────────────────────────────────────────────
+function renderSidebar() {
+  const allTags = [...new Set(pages.flatMap(p => p.tags))];
+  $('stat-pages').textContent = pages.length;
+  $('stat-tags').textContent  = allTags.length;
+  $('sidebar-tags').innerHTML = allTags.length === 0
+    ? '<span style="color:var(--text-light);font-size:12px;">No tags yet</span>'
+    : allTags.map(t => `<span class="sidebar-tag${activeTag===t?' active':''}" data-tag="${esc(t)}">#${esc(t)}</span>`).join('');
+  const recent = [...pages].sort((a,b)=>b.created-a.created).slice(0,6);
+  $('sidebar-recent').innerHTML = recent.length === 0
+    ? '<li style="cursor:default;color:var(--text-light)">No pages yet</li>'
+    : recent.map(p=>`<li data-id="${p.id}">${esc(p.title)}</li>`).join('');
+}
+
+// ── Home view ─────────────────────────────────────────────────────
+function renderHome(filter='') {
+  let list = [...pages].sort((a,b)=>b.created-a.created);
+  if (activeTag) list = list.filter(p=>p.tags.includes(activeTag));
+  if (filter.trim()) {
+    const q = filter.toLowerCase();
+    list = list.filter(p=>p.title.toLowerCase().includes(q)||p.content.toLowerCase().includes(q)||p.tags.some(t=>t.includes(q)));
+  }
+  $('notes-count').textContent = `${list.length} page${list.length!==1?'s':''}`;
+  if (!list.length) {
+    $('cards-container').innerHTML = !pages.length
+      ? '<div class="empty-state"><span class="big-icon">📝</span><h2>Your wiki is empty</h2><p>Press <strong>New Page</strong> to create your first note.</p></div>'
+      : '<div class="empty-state"><span class="big-icon">🔍</span><h2>No results</h2><p>Try a different search or tag.</p></div>';
+    return;
+  }
+  $('cards-container').innerHTML = list.map((p,i)=>`
+    <div class="note-card" data-id="${p.id}" style="animation-delay:${i*0.05}s">
+      <div class="card-meta">
+        <span class="card-date">${fmtDate(p.created)}</span>
+        <div class="card-tags">${p.tags.map(t=>`<span class="card-tag">#${esc(t)}</span>`).join('')}</div>
+      </div>
+      <div class="card-title">${esc(p.title)}</div>
+      <div class="card-excerpt">${esc(p.content)||'<em style="color:var(--text-light)">No content</em>'}</div>
+      <div class="card-footer">
+        <span class="card-words">${wc(p.content)} words</span>
+        <button class="card-delete" data-del="${p.id}">🗑 Delete</button>
+      </div>
+    </div>`).join('');
+}
+
+// ── Page view ─────────────────────────────────────────────────────
+function openPage(id) {
+  const p = pages.find(x=>x.id===id);
+  if (!p) return;
+  currentPageId = id;
+  $('page-title-display').textContent = p.title;
+  $('page-date-display').textContent  = fmtDate(p.created);
+  $('page-tags-display').innerHTML    = p.tags.map(t=>`<span class="page-tag-display">#${esc(t)}</span>`).join('');
+  $('page-body-display').textContent  = p.content || 'No content yet.';
+  $('view-home').style.display = 'none';
+  $('view-page').style.display = 'block';
+  window.scrollTo(0,0);
+}
+
+function showHome() {
+  currentPageId = null;
+  $('view-home').style.display = 'block';
+  $('view-page').style.display = 'none';
+  renderHome($('searchInput').value);
+  renderSidebar();
+}
+
+// ── Modal ─────────────────────────────────────────────────────────
+function openModal(id=null) {
+  editingId = id;
+  const p = id ? pages.find(x=>x.id===id) : null;
+  $('modal-title-text').textContent = id ? 'Edit Page' : 'New Page';
+  $('field-title').value   = p?.title   ?? '';
+  $('field-content').value = p?.content ?? '';
+  $('field-tags').value    = p ? p.tags.join(', ') : '';
+  $('btn-save').disabled   = !p;
+  $('modal-overlay').classList.add('open');
+  setTimeout(()=>$('field-title').focus(), 100);
+}
+function closeModal() { $('modal-overlay').classList.remove('open'); editingId = null; }
+
+async function savePage() {
+  const title = $('field-title').value.trim();
+  if (!title) return;
+  const content = $('field-content').value.trim();
+  const tags    = parseTags($('field-tags').value);
+  syncStatus('saving');
+  try {
+    if (editingId) {
+      await fbSave({ ...pages.find(x=>x.id===editingId), title, content, tags });
+      closeModal(); toast('Page updated ✓','green'); openPage(editingId);
+    } else {
+      const np = { id: genId(), title, content, tags, created: Date.now() };
+      await fbSave(np);
+      closeModal(); toast('Page created ✓','green'); openPage(np.id);
+    }
+  } catch(e) { syncStatus('error'); toast('Save failed — check connection'); }
+}
+
+// ── Delete ────────────────────────────────────────────────────────
+function askDelete(id) { pendingDelete = id; $('confirm-overlay').classList.add('open'); }
+function closeConfirm() { pendingDelete = null; $('confirm-overlay').classList.remove('open'); }
+async function doDelete() {
+  if (!pendingDelete) return;
+  syncStatus('saving');
+  try { await fbDelete(pendingDelete); closeConfirm(); toast('Page deleted'); showHome(); }
+  catch(e) { syncStatus('error'); toast('Delete failed — check connection'); }
+}
+
+// ── Dark mode ─────────────────────────────────────────────────────
+function toggleDark() {
+  const dark = document.documentElement.classList.toggle('dark');
+  localStorage.setItem('mywiki_dark', dark?'1':'0');
+  $('btn-theme').textContent = dark ? '☀️' : '🌙';
+}
+if (localStorage.getItem('mywiki_dark') === '1') {
+  document.documentElement.classList.add('dark');
+  $('btn-theme').textContent = '☀️';
+}
+
+// ── All event listeners ───────────────────────────────────────────
+$('nav-brand')     .addEventListener('click', showHome);
+$('btn-new')       .addEventListener('click', () => openModal());
+$('btn-theme')     .addEventListener('click', toggleDark);
+$('btn-back')      .addEventListener('click', showHome);
+$('btn-edit-page') .addEventListener('click', () => openModal(currentPageId));
+$('btn-delete-page').addEventListener('click', () => askDelete(currentPageId));
+$('modal-close')   .addEventListener('click', closeModal);
+$('btn-cancel')    .addEventListener('click', closeModal);
+$('btn-save')      .addEventListener('click', savePage);
+$('btn-confirm-no').addEventListener('click', closeConfirm);
+$('btn-confirm-yes').addEventListener('click', doDelete);
+
+$('modal-overlay').addEventListener('click', e => { if (e.target === $('modal-overlay')) closeModal(); });
+
+$('field-title').addEventListener('input', () => {
+  $('btn-save').disabled = !$('field-title').value.trim();
+});
+$('searchInput').addEventListener('input', e => {
+  if (currentPageId) showHome();
+  activeTag = null;
+  renderSidebar();
+  renderHome(e.target.value);
+});
+
+// Delegated: card click, card delete, sidebar tags, sidebar recent
+document.addEventListener('click', e => {
+  const delBtn = e.target.closest('.card-delete');
+  if (delBtn) { e.stopPropagation(); askDelete(delBtn.dataset.del); return; }
+
+  const card = e.target.closest('.note-card');
+  if (card) { openPage(card.dataset.id); return; }
+
+  const tag = e.target.closest('[data-tag]');
+  if (tag) {
+    const t = tag.dataset.tag;
+    activeTag = activeTag === t ? null : t;
+    $('searchInput').value = '';
+    renderSidebar();
+    currentPageId ? showHome() : renderHome('');
+    return;
+  }
+
+  const recentItem = e.target.closest('#sidebar-recent li[data-id]');
+  if (recentItem) { openPage(recentItem.dataset.id); return; }
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', e => {
+  if ((e.metaKey||e.ctrlKey) && e.key==='k') { e.preventDefault(); openModal(); }
+  if (e.key === 'Escape') { closeModal(); closeConfirm(); }
+  if (e.key === 'Enter' && $('modal-overlay').classList.contains('open') && document.activeElement.tagName !== 'TEXTAREA') savePage();
+});
+</script>
+</body>
+</html>
